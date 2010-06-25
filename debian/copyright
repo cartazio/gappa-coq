@@ -1,0 +1,25 @@
+This work was packaged for Debian by:
+
+    Guillaume Melquiond <guillaume.melquiond@gmail.com> on Fri, 25 Jun 2010 18:14:25 +0200
+
+It was downloaded from http://gappa.gforge.inria.fr/
+
+Upstream Author(s):
+
+    Guillaume Melquiond <guillaume.melquiond@inria.fr>
+
+Copyright:
+
+    Copyright (C) 2004 - 2010 by Guillaume Melquiond <guillaume.melquiond@inria.fr>
+
+License:
+
+    Gappa support library for the Coq proof assistant is free software;
+    you can redistribute it and/or modify it under the terms of GNU
+    Lesser General Public License (see the COPYING file).
+
+The Debian packaging is:
+
+    Copyright (C) 2010 Guillaume Melquiond <guillaume.melquiond@gmail.com>
+
+and is licensed under the LGPL, see `/usr/share/common-licenses/LGPL'.

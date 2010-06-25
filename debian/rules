@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/coq/coqvars.mk
+include /usr/share/ocaml/ocamlvars.mk
+
+%:
+	+dh --with ocaml $@
+
+.PHONY: override_dh_gencontrol
+override_dh_gencontrol:
+	dh_gencontrol -- -VF:CoqABI="$(COQ_ABI)"

@@ -1,0 +1,5 @@
+libgappa-coq (0.13-1) lucid; urgency=low
+
+  * Initial release
+
+ -- Guillaume Melquiond <guillaume.melquiond@gmail.com>  Fri, 25 Jun 2010 18:14:25 +0200
