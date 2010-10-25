@@ -126,12 +126,16 @@ let coq_modules =
        ["Coq"; "Reals"; "R_sqrt"];
        ["Coq"; "Reals"; "Rfunctions"];
        ["Coq"; "Lists"; "List"];
-       ["Gappa"; "Gappa_tactic_plugin"];
+       ["Gappa"; "Gappa_tactic"];
        ["Gappa"; "Gappa_fixed"];
        ["Gappa"; "Gappa_float"];
        ["Gappa"; "Gappa_round_def"];
        ["Gappa"; "Gappa_pred_bnd"];
        ["Gappa"; "Gappa_definitions"];
+       ["Flocq"; "Core"; "Fcore_generic_fmt"];
+       ["Flocq"; "Core"; "Fcore_rnd_ne"];
+       ["Flocq"; "Core"; "Fcore_FLT"];
+       ["Flocq"; "Core"; "Fcore_FIX"];
   ]
 
 let constant = gen_constant_in_modules "gappa" coq_modules
@@ -187,13 +191,13 @@ let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
 let coq_reApply = lazy (constant "reApply")
 
-let coq_gappa_rounding = lazy (constant "gappa_rounding")
-let coq_roundDN = lazy (constant "roundDN")
-let coq_roundUP = lazy (constant "roundUP")
-let coq_roundNE = lazy (constant "roundNE")
-let coq_roundZR = lazy (constant "roundZR")
-let coq_rounding_fixed = lazy (constant "rounding_fixed")
-let coq_rounding_float = lazy (constant "rounding_float")
+let coq_rndDN = lazy (constant "rndDN")
+let coq_rndUP = lazy (constant "rndUP")
+let coq_rndNE = lazy (constant "rndNE")
+let coq_rndZR = lazy (constant "rndZR")
+let coq_round = lazy (constant "round")
+let coq_FLT_exp = lazy (constant "FLT_exp")
+let coq_FIX_exp = lazy (constant "FIX_exp")
 
 let coq_boAdd = lazy (constant "boAdd")
 let coq_boSub = lazy (constant "boSub")
@@ -293,6 +297,18 @@ let plain_of_int =
     | It_int n -> wrap n
     | It_none n -> n
 
+let qt_round qt_a qt_b =
+  let n =
+    try
+      Hashtbl.find fun_table qt_a
+    with Not_found ->
+      let n = mk_pos (Hashtbl.length fun_table + 1) in
+      Hashtbl.replace fun_table qt_a n;
+      fun_list := qt_a :: !fun_list;
+      n
+    in
+  mkLApp coq_reApply [|n; qt_b|]
+
 let rec qt_Rint t =
   match decompose_app t with
     | c, [] when c = Lazy.force coq_R1 -> It_1
@@ -348,24 +364,13 @@ and qt_no_Rint t =
           with Not_found ->
             raise NotGappa
         end
+      | c, [u;v;w;b] when c = Lazy.force coq_round ->
+          qt_round (mkLApp coq_round [|u;v;w|]) (qt_term b)
       | c, [a;b] ->
           let gen_bin f = mkLApp coq_reBinary [|Lazy.force f; qt_term a; qt_term b|] in
           if c = Lazy.force coq_Rminus then gen_bin coq_boSub else
           if c = Lazy.force coq_Rdiv then gen_bin coq_boDiv else
-          if c = Lazy.force coq_gappa_rounding then
-            let qt_a = mkLApp coq_gappa_rounding [|a|] in
-            let qt_b = qt_term b in
-            let n =
-              try
-                Hashtbl.find fun_table qt_a
-              with Not_found ->
-                let n = mk_pos (Hashtbl.length fun_table + 1) in
-                Hashtbl.replace fun_table qt_a n;
-                fun_list := qt_a :: !fun_list;
-                n
-              in
-            mkLApp coq_reApply [|n; qt_b|]
-          else if c = Lazy.force coq_powerRZ then
+          if c = Lazy.force coq_powerRZ then
             let p =
               match tr_real_constant a with
                 | 2 -> coq_rePow2
@@ -452,26 +457,6 @@ let tr_unop c = match decompose_app c with
   | c, [] when c = Lazy.force coq_uoAbs -> Uabs
   | _ -> raise NotGappa
 
-let tr_mode c = match decompose_app c with
-  | c, [] when c = Lazy.force coq_roundDN -> "dn"
-  | c, [] when c = Lazy.force coq_roundNE -> "ne"
-  | c, [] when c = Lazy.force coq_roundUP -> "up"
-  | c, [] when c = Lazy.force coq_roundZR -> "zr"
-  | _ -> raise NotGappa
-
-let tr_rounding_mode c = match decompose_app c with
-  | c, [a;b] when c = Lazy.force coq_rounding_fixed ->
-      let a = tr_mode a in
-      let b = tr_arith_constant b in
-      sprintf "fixed<%d,%s>" b a
-  | c, [a;p;e] when c = Lazy.force coq_rounding_float ->
-      let a = tr_mode a in
-      let p = tr_positive p in
-      let e = tr_arith_constant e in
-      sprintf "float<%d,%d,%s>" p (-e) a
-  | _ ->
-      raise NotGappa
-
 (* RExpr -> term *)
 let rec tr_term uv uf c =
   match decompose_app c with
@@ -534,10 +519,26 @@ let rec tr_vars c =
     | _, [_] -> []
     | _ -> raise NotGappa
 
-let tr_fun c =
-  match decompose_app c with
-    | c, [a] when c = Lazy.force coq_gappa_rounding -> tr_rounding_mode a
-    | _ -> raise NotGappa
+let tr_fun c = match decompose_app c with
+  | c, [rdx;fmt;mode] when c = Lazy.force coq_round ->
+      let mode = match decompose_app mode with
+        | c, [] when c = Lazy.force coq_rndDN -> "dn"
+        | c, [] when c = Lazy.force coq_rndNE -> "ne"
+        | c, [] when c = Lazy.force coq_rndUP -> "up"
+        | c, [] when c = Lazy.force coq_rndZR -> "zr"
+        | _ -> raise NotGappa in
+      begin match decompose_app fmt with
+        | c, [e;p] when c = Lazy.force coq_FLT_exp ->
+            let e = tr_arith_constant e in
+            let p = tr_arith_constant p in
+            sprintf "float<%d,%d,%s>" p e mode
+        | c, [e] when c = Lazy.force coq_FIX_exp ->
+            let e = tr_arith_constant e in
+            sprintf "fixed<%d,%s>" e mode
+        | _ -> raise NotGappa
+      end
+  | _ ->
+      raise NotGappa
 
 let rec tr_funs c =
   match decompose_app c with
@@ -628,7 +629,7 @@ let gappa_prepare =
   lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
 let gappa gl =
-  Coqlib.check_required_library ["Gappa"; "Gappa_tactic_plugin"];
+  Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
   Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
 
 let gappa_quote gl =

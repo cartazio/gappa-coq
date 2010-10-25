@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [0.13],
+AC_INIT([Coq support library for Gappa], [0.14],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 AM_INIT_AUTOMAKE
@@ -51,10 +51,19 @@ AC_CACHE_CHECK([for ocamlopt >= 3.11], [gappa_cv_ocamlopt], [
       ocamlopt_version=`"$ocamlopt_path" -version`
       AX_VERSION_GE([$ocamlopt_version], [3.11], [gappa_cv_ocamlopt="$ocamlopt_path"])
     fi
-  fi])
+  fi ])
 OCAMLOPT="$gappa_cv_ocamlopt"
 
 if test -z "$OCAMLOPT"; then native_tactic=no; fi
+
+AC_MSG_CHECKING([for Flocq])
+AS_IF(
+  [ echo "Require Fcore Fcalc_digits." > conftest.v
+    "$COQC" conftest.v > conftest.err ],
+  [ AC_MSG_RESULT([yes]) ],
+  [ AC_MSG_RESULT([no])
+    AC_MSG_ERROR([ *** Unable to find the Flocq library (http://flocq.gforge.inria.fr/)])])
+rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(COQLIBS)
 COQLIBS=`$COQC -where`
@@ -82,11 +91,7 @@ AC_ARG_ENABLE([byte-tactic],
 if test "x$COQRFLAGS" = x; then module_name=Gappa; else module_name=none; fi
 
 AC_SUBST(TACTIC_TARGETS)
-TACTIC_TARGETS=""
 AC_SUBST(TACTIC_PARAM)
-TACTIC_PARAM=""
-AC_SUBST(TACTIC_DEFAULT)
-TACTIC_DEFAULT="Gappa_tactic_legacy.v"
 
 tactic_mode=""
 if test "$native_tactic" = yes; then
@@ -104,19 +109,13 @@ if test "$byte_tactic" = yes; then
   fi
 fi
 
-tactic_default="legacy"
-if test "$native_tactic" = yes -a "$byte_tactic" = yes; then
-  TACTIC_DEFAULT="Gappa_tactic_plugin.v"
-  tactic_default="plugin"
-fi
-
 if test -z "$tactic_mode"; then tactic_mode=" none"; fi
 
 echo
 echo "=== Summary ==="
 echo "Installation directory   $libdir"
 echo "Module name              $module_name"
-echo "Gappa tactic            $tactic_mode (default: $tactic_default)"
+echo "Gappa tactic            $tactic_mode"
 echo
 
 AC_CONFIG_FILES([Makefile src/Makefile testsuite/Makefile])
