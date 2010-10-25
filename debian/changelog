@@ -1,3 +1,9 @@
+libgappa-coq (0.14-1) lucid; urgency=low
+
+  * New upstream release
+
+ -- Guillaume Melquiond <guillaume.melquiond@gmail.com>  Mon, 25 Oct 2010 15:41:08 +0200
+
 libgappa-coq (0.13-1) lucid; urgency=low
 
   * Initial release

@@ -2,13 +2,14 @@ Source: libgappa-coq
 Section: math
 Priority: extra
 Maintainer: Guillaume Melquiond <guillaume.melquiond@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev, coq (>= 8.2), libcoq-ocaml-dev, dh-ocaml, ocaml-best-compilers
+Build-Depends: debhelper (>= 7), autotools-dev, coq (>= 8.2), libcoq-ocaml-dev, dh-ocaml, ocaml-best-compilers, libflocq-coq, gappa (>= 0.14)
 Standards-Version: 3.8.3
 Homepage: http://gappa.gforge.inria.fr/
 
 Package: libgappa-coq
 Architecture: any
-Depends: ${ocaml:Depends}, ${shlibs:Depends}, ${misc:Depends}, coq-${F:CoqABI}
+Depends: ${ocaml:Depends}, ${shlibs:Depends}, ${misc:Depends}, coq-${F:CoqABI}, libflocq-coq
+Recommends: gappa (>= 0.14)
 Description: Verification tool for floating-point programs (Coq support)
  Gappa is a tool intended to help verifying and formally proving
  properties on numerical programs dealing with floating-point or
