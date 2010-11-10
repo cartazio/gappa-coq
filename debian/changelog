@@ -1,3 +1,9 @@
+libgappa-coq (0.14-2) lucid; urgency=low
+
+  * Recompile with libflocq-coq (= 1.1)
+
+ -- Guillaume Melquiond <guillaume.melquiond@gmail.com>  Wed, 10 Nov 2010 13:35:45 +0100
+
 libgappa-coq (0.14-1) lucid; urgency=low
 
   * New upstream release
