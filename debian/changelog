@@ -1,3 +1,9 @@
+libgappa-coq (0.15.0-1~ppa+maverick1) maverick; urgency=low
+
+  * New upstream release
+
+ -- Guillaume Melquiond <guillaume.melquiond@gmail.com>  Thu, 24 Mar 2011 13:53:05 +0100
+
 libgappa-coq (0.14-2) lucid; urgency=low
 
   * Recompile with libflocq-coq (= 1.1)

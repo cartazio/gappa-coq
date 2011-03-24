@@ -2,7 +2,7 @@ Source: libgappa-coq
 Section: math
 Priority: extra
 Maintainer: Guillaume Melquiond <guillaume.melquiond@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev, coq (>= 8.2), libcoq-ocaml-dev, dh-ocaml, ocaml-best-compilers, libflocq-coq, gappa (>= 0.14)
+Build-Depends: debhelper (>= 7), autotools-dev, coq (>= 8.3), libcoq-ocaml-dev, dh-ocaml, ocaml-best-compilers, libflocq-coq, gappa (>= 0.14)
 Standards-Version: 3.8.3
 Homepage: http://gappa.gforge.inria.fr/
 
