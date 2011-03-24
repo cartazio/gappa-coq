@@ -141,7 +141,7 @@ let coq_modules =
 let constant = gen_constant_in_modules "gappa" coq_modules
 
 let coq_False = lazy (constant "False")
-let coq_eq = lazy (constant "eq")
+let coq_eq = lazy (build_coq_eq ())
 let coq_refl_equal = lazy (constant "refl_equal")
 
 let coq_and = lazy (constant "and")
@@ -226,6 +226,9 @@ let var_list = ref []
 let fun_list = ref []
 
 let mkLApp f v = mkApp (Lazy.force f, v)
+
+let mkList t =
+  List.fold_left (fun acc v -> mkLApp coq_cons [|t; v; acc|]) (mkLApp coq_nil [|t|])
 
 let rec mk_pos n =
   if n = 1 then Lazy.force coq_xH
@@ -513,12 +516,6 @@ let tr_var c = match kind_of_term c with
   | Var x -> string_of_id x
   | _ -> raise NotGappa
 
-let rec tr_vars c =
-  match decompose_app c with
-    | _, [_;h;t] -> tr_var h :: tr_vars t
-    | _, [_] -> []
-    | _ -> raise NotGappa
-
 let tr_fun c = match decompose_app c with
   | c, [rdx;fmt;mode] when c = Lazy.force coq_round ->
       let mode = match decompose_app mode with
@@ -540,17 +537,20 @@ let tr_fun c = match decompose_app c with
   | _ ->
       raise NotGappa
 
-let rec tr_funs c =
-  match decompose_app c with
-    | _, [_;h;t] -> tr_fun h :: tr_funs t
-    | _, [_] -> []
-    | _ -> raise NotGappa
+let tr_list f =
+  let rec aux c =
+    match decompose_app c with
+      | _, [_;h;t] -> f h :: aux t
+      | _, [_] -> []
+      | _ -> raise NotGappa
+    in
+  aux
 
 let tr_goal c =
   match decompose_app c with
     | c, [uv;uf;e] when c = Lazy.force coq_convert_goal ->
-        let uv = Array.of_list (tr_vars uv) in
-        let uf = Array.of_list (tr_funs uf) in
+        let uv = Array.of_list (tr_list tr_var uv) in
+        let uf = Array.of_list (tr_list tr_fun uf) in
         begin match decompose_app e with
           | _, [_;_;h;g] -> (tr_hyps uv uf h, tr_pred uv uf g)
           | _ -> raise NotGappa
@@ -628,10 +628,6 @@ let gappa_prepare =
   let id = Ident (dummy_loc, id_of_string "gappa_prepare") in
   lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
-let gappa gl =
-  Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
-  Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
-
 let gappa_quote gl =
   try
     let l = qt_hyps (pf_hyps_types gl) in
@@ -639,13 +635,10 @@ let gappa_quote gl =
     let _RAtom = Lazy.force coq_RAtom in
     let g = mkLApp coq_pair
       [|mkLApp coq_list [|_RAtom|]; _RAtom;
-        List.fold_left (fun acc (_, h) -> mkLApp coq_cons [|_RAtom; h; acc|])
-          (mkLApp coq_nil [|_RAtom|]) l;
+        mkList _RAtom (List.map (fun (_, h) -> h) l);
         qt_pred (pf_concl gl)|] in
-    let uv = List.fold_left (fun acc t -> mkLApp coq_cons [|_R; t; acc|])
-          (mkLApp coq_nil [|_R|]) !var_list in
-    let uf = List.fold_left (fun acc t -> mkLApp coq_cons [|mkArrow _R _R; t; acc|])
-          (mkLApp coq_nil [|mkArrow _R _R|]) !fun_list in
+    let uv = mkList _R !var_list in
+    let uf = mkList (mkArrow _R _R) !fun_list in
     let e = mkLApp coq_convert_goal [|uv; uf; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
@@ -658,12 +651,25 @@ let gappa_quote gl =
         (Tactics.keep []))
       (Tacmach.convert_concl_no_check e DEFAULTcast) gl
   with
-    | NotGappa -> error "something wrong happened"
+    | NotGappa ->
+      Hashtbl.clear var_table;
+      Hashtbl.clear fun_table;
+      var_list := [];
+      fun_list := [];
+      error "something wrong happened"
 
-let _ =
-  Tacinterp.overwriting_add_tactic "Gappa" (fun _ -> gappa);
-  Tacinterp.overwriting_add_tactic "Gappa_internal" (fun _ -> gappa_internal);
-  Tacinterp.overwriting_add_tactic "Gappa_quote" (fun _ -> gappa_quote);
-  Egrammar.extend_tactic_grammar "Gappa" [[Egrammar.TacTerm "gappa"]];
-  Egrammar.extend_tactic_grammar "Gappa_internal" [[Egrammar.TacTerm "gappa_internal"]];
-  Egrammar.extend_tactic_grammar "Gappa_quote" [[Egrammar.TacTerm "gappa_quote"]]
+let gappa gl =
+  Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
+  Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
+
+TACTIC EXTEND gappatac_gappa
+| [ "gappa" ] -> [ gappa ]
+END
+
+TACTIC EXTEND gappatac_gappa_internal
+| [ "gappa_internal" ] -> [ gappa_internal ]
+END
+
+TACTIC EXTEND gappatac_gappa_quote
+| [ "gappa_quote" ] -> [ gappa_quote ]
+END
