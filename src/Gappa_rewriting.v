@@ -3,6 +3,70 @@ Require Import Gappa_common.
 
 Section Gappa_rewriting.
 
+Theorem bnd_rewrite :
+  forall a b : R, forall zi : FF,
+  a = b -> BND b zi -> BND a zi.
+Proof.
+intros a b zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem abs_rewrite :
+  forall a b : R, forall zi : FF,
+  a = b -> ABS b zi -> ABS a zi.
+Proof.
+intros a b zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem fix_rewrite :
+  forall a b : R, forall zn : Z,
+  a = b -> FIX b zn -> FIX a zn.
+Proof.
+intros a b zn E Hz.
+now rewrite E.
+Qed.
+
+Theorem flt_rewrite :
+  forall a b : R, forall zn : positive,
+  a = b -> FLT b zn -> FLT a zn.
+Proof.
+intros a b zn E Hz.
+now rewrite E.
+Qed.
+
+Theorem nzr_rewrite :
+  forall a b : R,
+  a = b -> NZR b -> NZR a.
+Proof.
+intros a b E Hz.
+now rewrite E.
+Qed.
+
+Theorem rel_rewrite_1 :
+  forall a b c : R, forall zi : FF,
+  a = b -> REL b c zi -> REL a c zi.
+Proof.
+intros a b c zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem rel_rewrite_2 :
+  forall a b c : R, forall zi : FF,
+  a = b -> REL c b zi -> REL c a zi.
+Proof.
+intros a b c zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem eql_trans :
+  forall a b c : R,
+  a = b -> b = c -> a = c.
+Proof.
+intros a b c H1 H2.
+now rewrite H1.
+Qed.
+
 Theorem opp_mibs :
  forall a b : R, forall zi : FF,
  BND (-a - -b) zi ->
@@ -575,6 +639,78 @@ replace (b / (a - b))%R with (a / (a - b) - 1)%R.
 exact Hz.
 field.
 exact Hab.
+Qed.
+
+Theorem opp_fibe :
+  forall a b : R,
+  a = b -> (-a = -b)%R.
+Proof.
+intros a b H.
+now rewrite H.
+Qed.
+
+Theorem add_file :
+  forall a b c : R,
+  b = c -> (a + b = a + c)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem add_fire :
+  forall a b c : R,
+  a = c -> (a + b = c + b)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem sub_file :
+  forall a b c : R,
+  b = c -> (a - b = a - c)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem sub_fire :
+  forall a b c : R,
+  a = c -> (a - b = c - b)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem mul_file :
+  forall a b c : R,
+  b = c -> (a * b = a * c)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem mul_fire :
+  forall a b c : R,
+  a = c -> (a * b = c * b)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem div_file :
+  forall a b c : R,
+  b = c -> (a / b = a / c)%R.
+Proof.
+intros a b c H.
+now rewrite H.
+Qed.
+
+Theorem div_fire :
+  forall a b c : R,
+  a = c -> (a / b = c / b)%R.
+Proof.
+intros a b c H.
+now rewrite H.
 Qed.
 
 End Gappa_rewriting.

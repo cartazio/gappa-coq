@@ -56,6 +56,7 @@ type term =
 type pred =
   | Pin of term * Constant.t * Constant.t
   | Prel of term * term * Constant.t * Constant.t
+  | Peq of term * term
 
 let rec print_term fmt = function
   | Tconst c -> Constant.print fmt c
@@ -84,6 +85,8 @@ let print_pred fmt = function
   | Prel (t1, t2, c1, c2) ->
       fprintf fmt "%a -/ %a in [%a,%a]"
         print_term t1 print_term t2 Constant.print c1 Constant.print c2
+  | Peq (t1, t2) ->
+      fprintf fmt "%a = %a" print_term t1 print_term t2
 
 let temp_file f = if !debug then f else Filename.temp_file f ""
 let remove_file f = if not !debug then try Sys.remove f with _ -> ()
@@ -194,6 +197,7 @@ let coq_reApply = lazy (constant "reApply")
 let coq_rndDN = lazy (constant "rndDN")
 let coq_rndUP = lazy (constant "rndUP")
 let coq_rndNE = lazy (constant "rndNE")
+let coq_rndNA = lazy (constant "rndNA")
 let coq_rndZR = lazy (constant "rndZR")
 let coq_round = lazy (constant "round")
 let coq_FLT_exp = lazy (constant "FLT_exp")
@@ -499,6 +503,8 @@ let tr_pred uv uf c =
         end
     | c, [er;ex;l;u] when c = Lazy.force coq_raRel ->
         Prel (tr_term uv uf er, tr_term uv uf ex, tr_const l, tr_const u)
+    | c, [er;ex] when c = Lazy.force coq_raEq ->
+        Peq (tr_term uv uf er, tr_term uv uf ex)
     | c, [] when c = Lazy.force coq_raFalse ->
         let cr i = Constant.create (1, i, Bigint.zero) in
         let c0 = cr Bigint.zero in
@@ -520,6 +526,7 @@ let tr_fun c = match decompose_app c with
   | c, [rdx;fmt;mode] when c = Lazy.force coq_round ->
       let mode = match decompose_app mode with
         | c, [] when c = Lazy.force coq_rndDN -> "dn"
+        | c, [] when c = Lazy.force coq_rndNA -> "na"
         | c, [] when c = Lazy.force coq_rndNE -> "ne"
         | c, [] when c = Lazy.force coq_rndUP -> "up"
         | c, [] when c = Lazy.force coq_rndZR -> "zr"
