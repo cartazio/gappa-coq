@@ -1,3 +1,9 @@
+libgappa-coq (0.16.0-1~ppa+maverick1) maverick; urgency=low
+
+  * New upstream release
+
+ -- Guillaume Melquiond <guillaume.melquiond@gmail.com>  Tue, 31 May 2011 15:06:27 +0200
+
 libgappa-coq (0.15.0-1~ppa+maverick1) maverick; urgency=low
 
   * New upstream release
